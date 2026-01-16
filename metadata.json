@@ -1,0 +1,5 @@
+{
+  "name": "Amma Food Center",
+  "description": "A smart, mobile-first food ordering system with WhatsApp checkout integration and a comprehensive admin dashboard for order management and analytics.",
+  "requestFramePermissions": []
+}
