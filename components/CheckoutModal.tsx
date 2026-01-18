@@ -80,7 +80,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number *</label>
             <div className="relative">
-              <Phone className="absolute left-3 top-3.5 text-gray-400" size={18} />
+              <Phone className={`absolute left-3 top-3.5 transition-colors ${errors.phone ? 'text-red-400' : 'text-gray-400'}`} size={18} />
               <input
                 type="tel"
                 value={customer.phone}
@@ -90,8 +90,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
                 }}
                 className={`w-full pl-10 pr-4 py-3 rounded-lg border outline-none transition-all ${
                    errors.phone 
-                     ? 'border-red-500 bg-red-50 text-gray-900 focus:ring-2 focus:ring-red-200' 
-                     : 'border-transparent bg-gray-700 text-white placeholder-gray-400 focus:bg-gray-800 focus:ring-2 focus:ring-primary/50'
+                     ? 'border-red-500 bg-red-50 text-red-900 placeholder-red-400 focus:ring-2 focus:ring-red-300' 
+                     : 'border-gray-200 bg-gray-100 text-gray-900 placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-primary/50'
                 }`}
                 placeholder="10-digit number"
               />
@@ -102,14 +102,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Full Address *</label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-3.5 text-gray-400" size={18} />
+              <MapPin className={`absolute left-3 top-3.5 transition-colors ${errors.address ? 'text-red-400' : 'text-gray-400'}`} size={18} />
               <textarea
                 value={customer.address}
                 onChange={e => setCustomer({...customer, address: e.target.value})}
                 className={`w-full pl-10 pr-4 py-3 rounded-lg border outline-none transition-all resize-none ${
                    errors.address
-                     ? 'border-red-500 bg-red-50 text-gray-900 focus:ring-2 focus:ring-red-200'
-                     : 'border-transparent bg-gray-700 text-white placeholder-gray-400 focus:bg-gray-800 focus:ring-2 focus:ring-primary/50'
+                     ? 'border-red-500 bg-red-50 text-red-900 placeholder-red-400 focus:ring-2 focus:ring-red-300'
+                     : 'border-gray-200 bg-gray-100 text-gray-900 placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-primary/50'
                 }`}
                 placeholder="House No, Street, Landmark"
                 rows={2}
@@ -121,15 +121,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, c
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
              <div className="relative">
-              <User className="absolute left-3 top-3.5 text-gray-400" size={18} />
+              <User className={`absolute left-3 top-3.5 transition-colors ${errors.name ? 'text-red-400' : 'text-gray-400'}`} size={18} />
               <input
                 type="text"
                 value={customer.name}
                 onChange={e => setCustomer({...customer, name: e.target.value})}
                 className={`w-full pl-10 pr-4 py-3 rounded-lg border outline-none transition-all ${
                    errors.name
-                     ? 'border-red-500 bg-red-50 text-gray-900 focus:ring-2 focus:ring-red-200'
-                     : 'border-transparent bg-gray-700 text-white placeholder-gray-400 focus:bg-gray-800 focus:ring-2 focus:ring-primary/50'
+                     ? 'border-red-500 bg-red-50 text-red-900 placeholder-red-400 focus:ring-2 focus:ring-red-300'
+                     : 'border-gray-200 bg-gray-100 text-gray-900 placeholder-gray-500 focus:bg-white focus:ring-2 focus:ring-primary/50'
                 }`}
                 placeholder="Your Name"
               />

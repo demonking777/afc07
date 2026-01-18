@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MenuItem, CartItem, Announcement, PreviewVideo } from '../types';
 import { getMenu, createOrder, seedInitialMenu, getSettings, subscribeToSettings, subscribeToAnnouncements, getActivePreviewVideo } from '../services/dataService';
 import { MenuCard } from '../components/MenuCard';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { APP_CONFIG, CATEGORIES } from '../constants';
-import { ShoppingBag, Search, Filter, RefreshCcw, Play, Megaphone, Shield } from 'lucide-react';
+import { ShoppingBag, Search, Filter, RefreshCcw, Megaphone, Shield, Volume2, VolumeX, PlayCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Home: React.FC = () => {
@@ -20,6 +20,11 @@ export const Home: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [activeVideo, setActiveVideo] = useState<PreviewVideo | null>(null);
+  
+  // Video Player State
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
@@ -60,6 +65,53 @@ export const Home: React.FC = () => {
     }, 4000);
     return () => clearInterval(interval);
   }, [announcements]);
+
+  // Robust Video Autoplay Logic
+  useEffect(() => {
+    if (activeVideo && videoRef.current) {
+        const video = videoRef.current;
+        // Always start muted for browser policy compliance
+        video.muted = true;
+        setIsMuted(true);
+        
+        const attemptPlay = async () => {
+            try {
+                // Ensure the video is ready
+                if (video.readyState >= 2) {
+                    await video.play();
+                } else {
+                    video.oncanplay = async () => {
+                        await video.play();
+                        video.oncanplay = null; // cleanup
+                    };
+                }
+                setIsVideoPlaying(true);
+            } catch (err) {
+                console.log("Autoplay prevented by browser, waiting for user interaction.", err);
+                setIsVideoPlaying(false);
+            }
+        };
+        attemptPlay();
+    }
+  }, [activeVideo]);
+
+  const toggleVideoPlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(e => console.error("Play failed", e));
+      setIsVideoPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(videoRef.current.muted);
+  };
 
   // Debug tool to seed data if empty
   const handleSeed = async () => {
@@ -206,27 +258,53 @@ export const Home: React.FC = () => {
          </div>
       )}
 
-      {/* Hero Video Preview Section (Controlled by Admin) */}
+      {/* Hero Video Preview Section */}
       {announcements.length === 0 && activeVideo && (
-        <div className="max-w-4xl mx-auto mt-4 px-4 w-full">
-          <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] sm:h-64 bg-black rounded-2xl overflow-hidden shadow-md border border-gray-900 group">
+        <div className="max-w-4xl mx-auto mt-4 px-4 w-full animate-fade-in">
+          <div 
+            className="relative w-full aspect-[16/9] sm:aspect-[21/9] sm:h-64 bg-black rounded-2xl overflow-hidden shadow-md border border-gray-900 group cursor-pointer"
+            onClick={toggleVideoPlay}
+          >
             <video 
+              ref={videoRef}
+              key={activeVideo.url} // Forces remount on URL change to prevent stale source
               className="w-full h-full object-cover"
-              controls
+              src={activeVideo.url}
               muted
-              playsInline
-              preload="metadata"
+              loop
+              playsInline // Critical for iOS
+              preload="auto"
               poster={activeVideo.poster || undefined}
+              onPlay={() => setIsVideoPlaying(true)}
+              onPause={() => setIsVideoPlaying(false)}
             >
-              <source src={activeVideo.url} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
             
-            {/* Overlay only visible before interaction or if native controls are hidden */}
+            {/* Play/Pause Overlay */}
+            <div className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 ${isVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
+                {!isVideoPlaying && (
+                    <div className="bg-black/40 rounded-full p-4 backdrop-blur-sm border border-white/20 shadow-xl transform transition-transform hover:scale-110">
+                         <PlayCircle size={48} className="text-white fill-white/20" />
+                    </div>
+                )}
+            </div>
+            
+            {/* Badges */}
             <div className="absolute top-4 left-4 pointer-events-none z-10">
               <div className="flex items-center gap-2">
-                  <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">Featured</span>
+                  <span className="bg-primary/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-white/10">Featured</span>
               </div>
+            </div>
+
+             {/* Mute Control */}
+             <div className="absolute bottom-4 right-4 z-20">
+               <button 
+                 onClick={toggleMute}
+                 className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors"
+               >
+                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+               </button>
             </div>
           </div>
         </div>
