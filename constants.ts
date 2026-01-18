@@ -1,10 +1,17 @@
+
 import { MenuItem } from './types';
 
 export const APP_CONFIG = {
   name: 'Amma Food Center',
   currency: '₹',
   whatsappNumber: '919876543210', // Replace with real business number
-  adminPassword: 'admin', // Simple auth for demo
+  defaultCategories: ['Starter', 'Main Course', 'Breads', 'Rice', 'Dessert', 'Beverage']
+};
+
+// ONLY used for local demo mode when Firebase is not configured
+export const DEMO_ADMIN_CREDENTIALS = {
+  email: 'admin@ammafood.com',
+  password: 'admin'
 };
 
 export const INITIAL_MENU: MenuItem[] = [
@@ -69,5 +76,3 @@ export const INITIAL_MENU: MenuItem[] = [
     image: 'https://picsum.photos/400/300?random=6'
   }
 ];
-
-export const CATEGORIES: string[] = ['All', 'Starter', 'Main Course', 'Breads', 'Rice', 'Dessert', 'Beverage'];

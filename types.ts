@@ -1,6 +1,6 @@
 
 export type ItemType = 'veg' | 'non-veg';
-export type ItemCategory = 'Starter' | 'Main Course' | 'Breads' | 'Rice' | 'Dessert' | 'Beverage';
+export type ItemCategory = string; // Changed from fixed union to string to support dynamic categories
 
 export interface MenuItem {
   id: string;
@@ -50,6 +50,12 @@ export interface PreviewVideo {
   createdAt: number;
 }
 
+export interface AdminUser {
+  email: string;
+  uid: string;
+  isAnonymous: boolean;
+}
+
 // Analytics Types
 export interface DailySales {
   date: string;
@@ -59,4 +65,5 @@ export interface DailySales {
 
 export interface AppSettings {
   whatsappNumber: string;
+  categories: string[];
 }
