@@ -5,7 +5,8 @@ import { getMenu, createOrder, seedInitialMenu, getSettings, subscribeToSettings
 import { MenuCard } from '../components/MenuCard';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { APP_CONFIG } from '../constants';
-import { ShoppingBag, Search, Filter, RefreshCcw, Megaphone, Shield, Volume2, VolumeX, PlayCircle } from 'lucide-react';
+// Added XCircle to the imports
+import { ShoppingBag, Search, Filter, RefreshCcw, Megaphone, Shield, Volume2, VolumeX, PlayCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Home: React.FC = () => {
@@ -23,8 +24,9 @@ export const Home: React.FC = () => {
   
   // Video Player State
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [videoError, setVideoError] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -41,12 +43,10 @@ export const Home: React.FC = () => {
     };
     loadData();
 
-    // Subscribe to settings changes
     const unsubscribeSettings = subscribeToSettings((newSettings) => {
       setSettings(newSettings);
     });
     
-    // Subscribe to Announcements
     const unsubscribeAds = subscribeToAnnouncements((ads) => {
        setAnnouncements(ads.filter(a => a.isActive));
     });
@@ -66,38 +66,57 @@ export const Home: React.FC = () => {
     return () => clearInterval(interval);
   }, [announcements]);
 
-  // Robust Video Autoplay Logic
+  // Enhanced Video Autoplay Logic for Mobile
   useEffect(() => {
     if (activeVideo && videoRef.current) {
         const video = videoRef.current;
-        video.muted = true;
-        setIsMuted(true);
         
-        const attemptPlay = async () => {
-            try {
-                if (video.readyState >= 2) {
-                    await video.play();
-                } else {
-                    video.oncanplay = async () => {
-                        await video.play();
-                        video.oncanplay = null;
-                    };
-                }
-                setIsVideoPlaying(true);
-            } catch (err) {
-                console.log("Autoplay prevented", err);
-                setIsVideoPlaying(false);
+        // Critical for mobile autoplay: must be muted before calling .play()
+        video.muted = true;
+        video.setAttribute('muted', ''); // Safari requirement
+        video.setAttribute('playsinline', ''); // iOS requirement
+        
+        const attemptPlay = () => {
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    setIsVideoPlaying(true);
+                    setVideoError(false);
+                }).catch(err => {
+                    console.log("Autoplay was prevented by browser policy", err);
+                    setIsVideoPlaying(false);
+                });
             }
         };
-        attemptPlay();
+
+        if (video.readyState >= 3) {
+            attemptPlay();
+        } else {
+            video.oncanplay = () => {
+                attemptPlay();
+                video.oncanplay = null;
+            };
+        }
+
+        // Cleanup on unmount or video change
+        return () => {
+            video.pause();
+            video.oncanplay = null;
+        };
     }
   }, [activeVideo]);
 
-  const toggleVideoPlay = () => {
+  const toggleVideoPlay = (e: React.MouseEvent) => {
+    // Prevent event bubbling if necessary, but here we want to allow tap-to-play
     if (!videoRef.current) return;
+    
     if (videoRef.current.paused) {
-      videoRef.current.play().catch(e => console.error("Play failed", e));
-      setIsVideoPlaying(true);
+      videoRef.current.play()
+        .then(() => setIsVideoPlaying(true))
+        .catch(e => {
+            console.error("Manual play failed", e);
+            setVideoError(true);
+        });
     } else {
       videoRef.current.pause();
       setIsVideoPlaying(false);
@@ -262,35 +281,47 @@ export const Home: React.FC = () => {
               className="w-full h-full object-cover"
               src={activeVideo.url}
               muted
+              autoPlay
               loop
               playsInline
               preload="auto"
               poster={activeVideo.poster || undefined}
-              onPlay={() => setIsVideoPlaying(true)}
-              onPause={() => setIsVideoPlaying(false)}
+              onError={() => setVideoError(true)}
             >
               Your browser does not support the video tag.
             </video>
-            <div className={`absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 ${isVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
+            
+            <div className={`absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-300 ${isVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                 {!isVideoPlaying && (
-                    <div className="bg-black/40 rounded-full p-4 backdrop-blur-sm border border-white/20 shadow-xl transform transition-transform hover:scale-110">
-                         <PlayCircle size={48} className="text-white fill-white/20" />
+                    <div className="bg-black/40 rounded-full p-6 backdrop-blur-sm border border-white/20 shadow-xl transform transition-transform hover:scale-110 active:scale-95">
+                         <PlayCircle size={64} className="text-white fill-white/10" />
                     </div>
                 )}
             </div>
+            
             <div className="absolute top-4 left-4 pointer-events-none z-10">
               <div className="flex items-center gap-2">
                   <span className="bg-primary/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-white/10">Featured</span>
               </div>
             </div>
-             <div className="absolute bottom-4 right-4 z-20">
+            
+            <div className="absolute bottom-4 right-4 z-20">
                <button 
                  onClick={toggleMute}
-                 className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors"
+                 className="p-3 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors active:scale-90"
                >
-                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                 {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                </button>
             </div>
+
+            {videoError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 text-white p-4 text-center">
+                <div className="space-y-2">
+                  <XCircle size={32} className="mx-auto text-red-500" />
+                  <p className="text-sm font-medium">Failed to load video</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
