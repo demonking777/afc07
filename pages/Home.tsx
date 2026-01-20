@@ -5,7 +5,6 @@ import { getMenu, createOrder, seedInitialMenu, getSettings, subscribeToSettings
 import { MenuCard } from '../components/MenuCard';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { APP_CONFIG } from '../constants';
-// Added XCircle to the imports
 import { ShoppingBag, Search, Filter, RefreshCcw, Megaphone, Shield, Volume2, VolumeX, PlayCircle, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -70,11 +69,9 @@ export const Home: React.FC = () => {
   useEffect(() => {
     if (activeVideo && videoRef.current) {
         const video = videoRef.current;
-        
-        // Critical for mobile autoplay: must be muted before calling .play()
         video.muted = true;
-        video.setAttribute('muted', ''); // Safari requirement
-        video.setAttribute('playsinline', ''); // iOS requirement
+        video.setAttribute('muted', '');
+        video.setAttribute('playsinline', '');
         
         const attemptPlay = () => {
             const playPromise = video.play();
@@ -83,7 +80,7 @@ export const Home: React.FC = () => {
                     setIsVideoPlaying(true);
                     setVideoError(false);
                 }).catch(err => {
-                    console.log("Autoplay was prevented by browser policy", err);
+                    console.log("Autoplay prevented", err);
                     setIsVideoPlaying(false);
                 });
             }
@@ -98,7 +95,6 @@ export const Home: React.FC = () => {
             };
         }
 
-        // Cleanup on unmount or video change
         return () => {
             video.pause();
             video.oncanplay = null;
@@ -106,17 +102,10 @@ export const Home: React.FC = () => {
     }
   }, [activeVideo]);
 
-  const toggleVideoPlay = (e: React.MouseEvent) => {
-    // Prevent event bubbling if necessary, but here we want to allow tap-to-play
+  const toggleVideoPlay = () => {
     if (!videoRef.current) return;
-    
     if (videoRef.current.paused) {
-      videoRef.current.play()
-        .then(() => setIsVideoPlaying(true))
-        .catch(e => {
-            console.error("Manual play failed", e);
-            setVideoError(true);
-        });
+      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => setVideoError(true));
     } else {
       videoRef.current.pause();
       setIsVideoPlaying(false);
@@ -131,7 +120,7 @@ export const Home: React.FC = () => {
   };
 
   const handleSeed = async () => {
-    if (confirm("Seed initial menu data to Firebase?")) {
+    if (confirm("Seed initial menu data?")) {
       await seedInitialMenu();
       const items = await getMenu();
       setMenu(items);
@@ -192,23 +181,22 @@ export const Home: React.FC = () => {
           <div className="flex items-center gap-3">
             <img 
               src="https://cdn-icons-png.flaticon.com/512/3448/3448606.png" 
-              alt="Amma Food Center" 
+              alt="Logo" 
               className="w-10 h-10 object-contain bg-orange-50 rounded-full p-1 border border-orange-100 shadow-sm"
             />
             <div>
               <h1 className="font-bold text-gray-900 leading-none text-lg tracking-tight">{APP_CONFIG.name}</h1>
-              <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Mumbai • Fast Delivery</span>
+              <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Quality • Fast • Secure</span>
             </div>
           </div>
           
           <button 
             onClick={() => setIsCheckoutOpen(true)}
             className="relative p-2.5 bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-primary rounded-xl transition-all active:scale-95 border border-gray-100"
-            aria-label="View Cart"
           >
             <ShoppingBag size={22} strokeWidth={2.5} />
             {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm animate-fade-in">
+              <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
                 {cartCount}
               </span>
             )}
@@ -221,7 +209,7 @@ export const Home: React.FC = () => {
                 <Search className="absolute left-3 top-2.5 text-gray-400" size={15} />
                 <input 
                   type="text" 
-                  placeholder="Search dishes..." 
+                  placeholder="Find your favorite..." 
                   className="w-full pl-9 pr-4 py-2 bg-gray-100/80 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow border-transparent border focus:bg-white"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -240,39 +228,29 @@ export const Home: React.FC = () => {
         </div>
       </header>
 
-      {announcements.length > 0 && (
-         <div className="max-w-4xl mx-auto mt-4 px-4 w-full">
-            <div className="relative w-full h-16 sm:h-20 bg-gradient-to-r from-orange-100 to-orange-50 rounded-xl border border-orange-100 overflow-hidden shadow-sm flex items-center justify-center">
-              {announcements.map((ad, idx) => (
-                <div 
-                  key={ad.id}
-                  className={`absolute inset-0 transition-opacity duration-700 flex items-center justify-center ${idx === currentAdIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-                >
-                  {ad.type === 'text' ? (
-                     <div className="flex items-center gap-3 px-4">
-                        <Megaphone className="text-primary shrink-0 animate-bounce" size={20} />
-                        <span className="font-bold text-gray-800 text-sm sm:text-base text-center leading-tight">{ad.content}</span>
-                     </div>
-                  ) : (
-                     <img src={ad.content} alt="Ad" className="w-full h-full object-cover" />
-                  )}
-                </div>
-              ))}
-              {announcements.length > 1 && (
-                 <div className="absolute bottom-1.5 flex gap-1 z-20">
-                    {announcements.map((_, idx) => (
-                       <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentAdIndex ? 'bg-primary' : 'bg-gray-300'}`}></div>
-                    ))}
-                 </div>
-              )}
-            </div>
-         </div>
-      )}
-
-      {announcements.length === 0 && activeVideo && (
-        <div className="max-w-4xl mx-auto mt-4 px-4 w-full animate-fade-in">
+      {/* Hero Content (Ads/Video) */}
+      <div className="max-w-4xl mx-auto mt-4 px-4 w-full">
+        {announcements.length > 0 ? (
+          <div className="relative w-full h-16 sm:h-20 bg-gradient-to-r from-orange-100 to-orange-50 rounded-xl border border-orange-100 overflow-hidden shadow-sm flex items-center justify-center">
+            {announcements.map((ad, idx) => (
+              <div 
+                key={ad.id}
+                className={`absolute inset-0 transition-opacity duration-700 flex items-center justify-center ${idx === currentAdIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+              >
+                {ad.type === 'text' ? (
+                   <div className="flex items-center gap-3 px-4">
+                      <Megaphone className="text-primary shrink-0 animate-bounce" size={20} />
+                      <span className="font-bold text-gray-800 text-sm sm:text-base text-center leading-tight">{ad.content}</span>
+                   </div>
+                ) : (
+                   <img src={ad.content} alt="Ad" className="w-full h-full object-cover" />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : activeVideo && (
           <div 
-            className="relative w-full aspect-[16/9] sm:aspect-[21/9] sm:h-64 bg-black rounded-2xl overflow-hidden shadow-md border border-gray-900 group cursor-pointer"
+            className="relative w-full aspect-[16/9] sm:aspect-[21/9] sm:max-h-[300px] bg-black rounded-2xl overflow-hidden shadow-md border border-gray-900 group cursor-pointer"
             onClick={toggleVideoPlay}
           >
             <video 
@@ -286,90 +264,67 @@ export const Home: React.FC = () => {
               playsInline
               preload="auto"
               poster={activeVideo.poster || undefined}
-              onError={() => setVideoError(true)}
-            >
-              Your browser does not support the video tag.
-            </video>
-            
+            />
             <div className={`absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-300 ${isVideoPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
-                {!isVideoPlaying && (
-                    <div className="bg-black/40 rounded-full p-6 backdrop-blur-sm border border-white/20 shadow-xl transform transition-transform hover:scale-110 active:scale-95">
-                         <PlayCircle size={64} className="text-white fill-white/10" />
-                    </div>
-                )}
+              {!isVideoPlaying && <PlayCircle size={64} className="text-white fill-white/10" />}
             </div>
-            
-            <div className="absolute top-4 left-4 pointer-events-none z-10">
-              <div className="flex items-center gap-2">
-                  <span className="bg-primary/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-white/10">Featured</span>
-              </div>
-            </div>
-            
             <div className="absolute bottom-4 right-4 z-20">
-               <button 
-                 onClick={toggleMute}
-                 className="p-3 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors active:scale-90"
-               >
+               <button onClick={toggleMute} className="p-3 bg-black/50 text-white rounded-full backdrop-blur-md border border-white/10">
                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                </button>
             </div>
-
-            {videoError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 text-white p-4 text-center">
-                <div className="space-y-2">
-                  <XCircle size={32} className="mx-auto text-red-500" />
-                  <p className="text-sm font-medium">Failed to load video</p>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <main className="max-w-4xl mx-auto p-4 pt-6 w-full flex-1">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
+          <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredMenu.map(item => (
-                <MenuCard
-                  key={item.id}
-                  item={item}
-                  quantity={cart.find(i => i.id === item.id)?.quantity || 0}
-                  onAdd={() => addToCart(item)}
-                  onRemove={() => removeFromCart(item.id)}
-                />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredMenu.map(item => (
+              <MenuCard
+                key={item.id}
+                item={item}
+                quantity={cart.find(i => i.id === item.id)?.quantity || 0}
+                onAdd={() => addToCart(item)}
+                onRemove={() => removeFromCart(item.id)}
+              />
+            ))}
             {filteredMenu.length === 0 && (
-              <div className="text-center py-20 text-gray-400">
+              <div className="col-span-full text-center py-20 text-gray-400">
                 <Filter className="mx-auto mb-2" size={48} />
-                <p>No items found.</p>
+                <p>Nothing matches your filter.</p>
                 {menu.length === 0 && (
                    <button onClick={handleSeed} className="mt-4 text-primary text-sm flex items-center gap-1 mx-auto hover:underline">
-                     <RefreshCcw size={14} /> Seed Demo Data
+                     <RefreshCcw size={14} /> Seed Menu
                    </button>
                 )}
               </div>
             )}
-          </>
+          </div>
         )}
       </main>
 
-      <footer className="w-full bg-white border-t border-gray-100 py-6 mt-auto">
-        <div className="max-w-4xl mx-auto px-4 flex flex-col items-center justify-center gap-4">
-           <p className="text-xs text-gray-400 text-center">
-             © {new Date().getFullYear()} {APP_CONFIG.name}. All rights reserved.
+      <footer className="w-full bg-white border-t border-gray-100 pt-12">
+        <div className="max-w-4xl mx-auto px-4 pb-12 flex flex-col items-center justify-center gap-6">
+           <div className="flex items-center gap-3 opacity-30 grayscale">
+             <img src="https://cdn-icons-png.flaticon.com/512/3448/3448606.png" alt="Logo" className="w-8 h-8 object-contain" />
+             <span className="font-bold text-sm tracking-widest uppercase">{APP_CONFIG.name}</span>
+           </div>
+           <p className="text-[10px] text-gray-400 text-center font-medium opacity-50 uppercase tracking-widest">
+             © {new Date().getFullYear()} {APP_CONFIG.name} • Quality First
            </p>
+        </div>
+
+        {/* System Entry Layer - Fixed to absolute base, discrete and non-intrusive */}
+        <div className="w-full py-4 bg-gray-50 border-t border-gray-100 flex justify-center">
            <Link 
              to="/admin" 
-             className="flex items-center gap-2 text-[10px] font-semibold text-gray-300 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-full transition-colors"
+             className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[9px] font-bold text-gray-300 hover:text-gray-500 hover:bg-white hover:shadow-sm transition-all duration-300 tracking-[0.15em] border border-transparent hover:border-gray-200 uppercase"
            >
-             <Shield size={10} />
-             ADMIN LOGIN
+             <Shield size={9} className="opacity-40" />
+             System Access
            </Link>
         </div>
       </footer>

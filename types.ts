@@ -1,6 +1,6 @@
 
 export type ItemType = 'veg' | 'non-veg';
-export type ItemCategory = string; // Changed from fixed union to string to support dynamic categories
+export type ItemCategory = string;
 
 export interface MenuItem {
   id: string;
@@ -21,6 +21,7 @@ export interface CustomerInfo {
   name: string;
   phone: string;
   address: string;
+  email?: string;
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled';
@@ -56,14 +57,23 @@ export interface AdminUser {
   isAnonymous: boolean;
 }
 
-// Analytics Types
 export interface DailySales {
   date: string;
   amount: number;
   orders: number;
 }
 
+export interface GoogleSheetsConfig {
+  spreadsheetId: string;
+  sheetName: string;
+  syncEnabled: boolean;
+  lastSyncAt: number;
+  isConnected: boolean;
+  accessToken?: string;
+}
+
 export interface AppSettings {
   whatsappNumber: string;
   categories: string[];
+  googleSheets?: GoogleSheetsConfig;
 }

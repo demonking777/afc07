@@ -5,7 +5,9 @@ export const APP_CONFIG = {
   name: 'Amma Food Center',
   currency: '₹',
   whatsappNumber: '919876543210', // Replace with real business number
-  defaultCategories: ['Starter', 'Main Course', 'Breads', 'Rice', 'Dessert', 'Beverage']
+  defaultCategories: ['Starter', 'Main Course', 'Breads', 'Rice', 'Dessert', 'Beverage'],
+  // Get this from Google Cloud Console > APIs & Services > Credentials
+  googleClientId: '' // Leave empty to disable/test safety check, or add your actual client ID
 };
 
 // ONLY used for local demo mode when Firebase is not configured
